@@ -1,4 +1,4 @@
-import Cita from "../models/citas.js  ";
+import Cita from "../models/citas.js";
 import Paciente from "../models/pacientes.js"
 import Especialidad from "../models/especialidades.js";
 import mongoose from "mongoose";
@@ -16,14 +16,14 @@ const mostrarCitas = async (req, res) => {
     }
 }
 
-const buscarCitas = async (req, res) => {
+const buscarCita = async (req, res) => {
     const CitaId = req.params.id;
     try {
-      const Cita = await Cita.findById(CitaId);
-      if (!Cita) {
+      const Citas = await Cita.findById(CitaId);
+      if (!Citas) {
         return res.status(404).json({ error: "No se encontró la Cita" });
       }else{
-        res.status(200).json(Cita);
+        return res.status(200).json(Citas);
       }
     } catch (error) {
       res.status(500).json({ error: "Error al obtener la Cita" });
@@ -32,35 +32,40 @@ const buscarCitas = async (req, res) => {
 }
 
 const registrarCita = async (req, res) => {
-    const { nombreMateria, Paciente } = req.body;
+    const { cedula, especialidad, fecha, descripcion } = req.body;
+    let { nombre } = req.body
     try {
-      const buscarPaciente = await Paciente.find({ nombreMateria });
-      const buscarMateria = await Especialidad.find({ Paciente });
-      let PacienteEncontrado = null;
-      let MateriaEncontrada = null;
-      for (let i = 0 ; i < buscarPaciente.length ; i++){
-        if(Paciente == buscarPaciente[i].nombre){
-          PacienteEncontrado = buscarPaciente[i].nombre
+      const buscarCedula = await Paciente.find({ cedula });
+      const buscarEspecialidad = await Especialidad.find({ especialidad });
+      let CedulaEncontrado = null;
+      let EspecialidadEncontrada = null;
+      for (let i = 0 ; i < buscarCedula.length ; i++){
+        if(cedula == buscarCedula[i].cedula){
+          CedulaEncontrado = buscarCedula[i].cedula
+          nombre = buscarCedula[i].nombre
           break
         }
       }
-      for (let i = 0 ; i < buscarMateria.length ; i++){
-        if(nombreMateria == buscarMateria[i].nombremateria){
-          MateriaEncontrada = buscarMateria[i].nombremateria
+      for (let i = 0 ; i < buscarEspecialidad.length ; i++){
+        if(especialidad == buscarEspecialidad[i].nombre){
+          EspecialidadEncontrada = buscarEspecialidad[i].nombre
           break
         }
       }
-      if(PacienteEncontrado == null && MateriaEncontrada == null) return res.status(404).json({ message : 'No existe la materia y tampoco el Paciente'})
-      else if(PacienteEncontrado==null) return res.status(404).json({ message : 'No existe ese Paciente'})
-      else if(MateriaEncontrada==null) return res.status(404).json({ message : 'No existe esa materia'})
+      if(CedulaEncontrado == null && EspecialidadEncontrada == null) return res.status(404).json({ message : 'No existe ese paciente y tampoco la especialidad'})
+      else if(CedulaEncontrado == null) return res.status(404).json({ message : 'No existe ese Paciente'})
+      else if(EspecialidadEncontrada==null) return res.status(404).json({ message : 'No existe esa especialidad'})
       else {
-        const exisMateria = await Cita.findOne({ nombreMateria })
-        const exisPaciente = await Cita.findOne({ Paciente })
-        if(exisPaciente && exisMateria) return res.status(200).json({ message : 'El Paciente ya se encuentra Citado en esa materia'})
+        const exisFecha = await Cita.findOne({ fecha })
+        const exisPaciente = await Cita.findOne({ cedula })
+        if(exisPaciente && exisFecha) return res.status(200).json({ message : 'El Paciente ya tiene una cita esa fecha'})
         const nuevaCita = await Cita.create({
           _id: new mongoose.Types.ObjectId(),
-          nombreMateria,
-          Paciente
+          nombre,
+          cedula,
+          especialidad,
+          fecha,
+          descripcion
         });
         res.status(201).json({ message: "Cita creada", Cita : nuevaCita });
     }
@@ -72,37 +77,47 @@ const registrarCita = async (req, res) => {
 
 const actualizarCita = async (req, res) => {
   const CitaId = req.params.id;
-  const { nombreMateria, Paciente } = req.body;
+  const { cedula, especialidad, fecha, descripcion } = req.body;
+  let { nombre } = req.body
   try {
-    const buscarPaciente = await Paciente.find({ nombreMateria });
-    const buscarMateria = await Especialidad.find({ Paciente });
-    let PacienteEncontrado = null;
-    let MateriaEncontrada = null;
-    for (let i = 0 ; i < buscarPaciente.length ; i++){
-      if(Paciente == buscarPaciente[i].nombre){
-        PacienteEncontrado = buscarPaciente[i].nombre
-        break
+    const buscarCedula = await Paciente.find({ cedula });
+      const buscarEspecialidad = await Especialidad.find({ especialidad });
+      let CedulaEncontrado = null;
+      let EspecialidadEncontrada = null;
+      for (let i = 0 ; i < buscarCedula.length ; i++){
+        if(cedula == buscarCedula[i].cedula){
+          CedulaEncontrado = buscarCedula[i].cedula
+          nombre = buscarCedula[i].nombre
+          break
+        }
       }
-    }
-    for (let i = 0 ; i < buscarMateria.length ; i++){
-      if(nombreMateria == buscarMateria[i].nombremateria){
-        MateriaEncontrada = buscarMateria[i].nombremateria
-        break
+      for (let i = 0 ; i < buscarEspecialidad.length ; i++){
+        if(especialidad == buscarEspecialidad[i].nombre){
+          EspecialidadEncontrada = buscarEspecialidad[i].nombre
+          break
+        }
       }
-    }
-    if (MateriaEncontrada == null && PacienteEncontrado == null) {
-      return res.status(404).json({ message: 'No se puede actualizar porque no existe ese Paciente y tampoco la materia' });
-    } else if (PacienteEncontrado == null) {
-      return res.status(404).json({ message: 'No se puede actualizar porque no existe ese Paciente' });
-    } else if (MateriaEncontrada == null) {
-      return res.status(404).json({ message: 'No se puede actualizar porque no existe esa materia' });
-    } else {
-      const CitaActualizada = await Cita.findByIdAndUpdate(CitaId, req.body, { new: true });
-      if (!CitaActualizada) return res.status(404).json({ error: "No se encontró la matrícula para actualizar" });
-      res.status(200).json({ message: "Matrícula actualizada", Cita: CitaActualizada });
+      if(CedulaEncontrado == null && EspecialidadEncontrada == null) return res.status(404).json({ message : 'No existe ese paciente y tampoco la especialidad'})
+      else if(CedulaEncontrado == null) return res.status(404).json({ message : 'No existe ese Paciente'})
+      else if(EspecialidadEncontrada==null) return res.status(404).json({ message : 'No existe esa especialidad'})
+      else {
+      const CitaActualizada = await Cita.findByIdAndUpdate(
+        CitaId, 
+        {
+          nombre,
+          cedula,
+          especialidad,
+          fecha,
+          descripcion
+        },
+        {
+           new: true 
+        });
+      if (!CitaActualizada) return res.status(404).json({ error: "No se encontró la cita para actualizar" });
+      res.status(200).json({ message: "Cita actualizada", Cita: CitaActualizada });
     }
   } catch (error) {
-    res.status(500).json({ error: "Error al actualizar la matrícula" });
+    res.status(500).json({ error: "Error al actualizar la cita" });
     console.log(error);
   }
 };
@@ -125,7 +140,7 @@ const borrarCita = async (req, res) => {
 
 export {
     mostrarCitas,
-    buscarCitas,
+    buscarCita,
     registrarCita,
     actualizarCita,
     borrarCita

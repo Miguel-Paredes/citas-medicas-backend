@@ -1,7 +1,6 @@
 import Registro from '../models/login.js';
 
-// let verificado = false;
-let verificado = true;
+let verificado = false;
 
 const inicioLogin = async (req, res) => {
   registroLogin()
